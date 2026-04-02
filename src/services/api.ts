@@ -46,7 +46,20 @@ export const apiService = {
   },
 
   /**
-   * Supabase integration would go here using the Supabase client
-   * For now, we use the n8n webhooks which often handle the Supabase logic
+   * Fetches the UAZAPI QR Code from the backend
    */
+  async getUazapiQrCode() {
+    try {
+      // Endpoint should return { qrCode: "base64..." }
+      const response = await fetch(N8N_CONFIG_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'get_qr_uazapi' })
+      });
+      return await response.json();
+    } catch (error) {
+      console.error('Erro ao buscar QR Code UAZAPI:', error);
+      throw error;
+    }
+  }
 };

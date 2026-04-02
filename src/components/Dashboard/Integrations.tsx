@@ -1,12 +1,30 @@
 import React, { useState } from 'react';
-import { QrCode, Link, ShieldCheck, Globe } from 'lucide-react';
+import { QrCode, ShieldCheck, Globe, Webhook, RefreshCw } from 'lucide-react';
+import { apiService } from '../../services/api';
 
 export const Integrations: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<'uazapi' | 'meta' | 'zapi' | 'web'>('uazapi');
+  const [activeSubTab, setActiveSubTab] = useState<'uazapi' | 'meta' | 'webhook' | 'web'>('uazapi');
   const [loading, setLoading] = useState(false);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   
   const [metaConfig, setMetaConfig] = useState({ phoneId: '', token: '' });
-  const [zapiConfig, setZapiConfig] = useState({ instanceId: '', token: '' });
+  const [webhookConfig, setWebhookConfig] = useState({ url: '', secret: '' });
+
+  const handleFetchQr = async () => {
+    setLoading(true);
+    try {
+      const data = await apiService.getUazapiQrCode();
+      if (data.qrCode) {
+        setQrCodeUrl(data.qrCode);
+      } else {
+        alert('QR Code em processamento. Tente novamente em alguns segundos.');
+      }
+    } catch (error) {
+      alert('Erro ao buscar QR Code. Verifique sua conexão.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSaveMeta = () => {
     setLoading(true);
@@ -16,18 +34,18 @@ export const Integrations: React.FC = () => {
     }, 1500);
   };
 
-  const handleSaveZapi = () => {
+  const handleSaveWebhook = () => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      alert('Configurações Z-API salvas!');
+      alert('Webhook configurado com sucesso!');
     }, 1500);
   };
 
   const integrations = [
-    { id: 'uazapi', label: 'UAZAPI (QR Code)', icon: QrCode, recommended: true },
+    { id: 'uazapi', label: 'UAZAPI (WhatsApp)', icon: QrCode, recommended: true },
     { id: 'meta', label: 'Meta API (Oficial)', icon: ShieldCheck },
-    { id: 'zapi', label: 'Z-API', icon: Link },
+    { id: 'webhook', label: 'Webhook Genérico', icon: Webhook },
     { id: 'web', label: 'Chat Web', icon: Globe },
   ];
 
@@ -67,13 +85,37 @@ export const Integrations: React.FC = () => {
           <div style={{ textAlign: 'center' }}>
             <h3 style={{ marginBottom: '16px' }}>Conexão Instantânea via QR Code</h3>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '30px', maxWidth: '600px', margin: '0 auto' }}>
-              A UAZAPI é a forma mais fácil de conectar seu WhatsApp. Basta escanear o QR Code abaixo diretamente no seu painel.
+              A UAZAPI é a forma mais fácil de conectar seu WhatsApp. Clique abaixo para gerar um novo QR Code.
             </p>
-            <div className="glass" style={{ width: '250px', height: '250px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', borderRadius: '12px' }}>
-               <QrCode size={180} color="black" />
+            <div className="glass" style={{ width: '250px', height: '250px', margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', borderRadius: '12px', overflow: 'hidden' }}>
+              {qrCodeUrl ? (
+                <img src={qrCodeUrl} alt="QR Code" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              ) : (
+                <QrCode size={120} color="#ddd" />
+              )}
             </div>
-            <p style={{ marginTop: '24px', fontSize: '14px', color: 'var(--text-tertiary)' }}>
-              Status: <span style={{ color: 'var(--accent-blue)' }}>Aguardando conexão...</span>
+            
+            <button 
+              onClick={handleFetchQr}
+              disabled={loading}
+              style={{ 
+                background: 'var(--accent-blue)', 
+                color: 'white', 
+                padding: '12px 24px', 
+                borderRadius: '8px', 
+                fontWeight: 'bold',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                marginBottom: '16px'
+              }}
+            >
+              <RefreshCw size={18} className={loading ? 'spin' : ''} />
+              {loading ? 'Gerando...' : 'Gerar Novo QR Code'}
+            </button>
+
+            <p style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>
+              Status: <span style={{ color: qrCodeUrl ? 'var(--accent-cyan)' : 'var(--accent-blue)' }}>{qrCodeUrl ? 'QR Code Pronto' : 'Aguardando solicitação'}</span>
             </p>
           </div>
         )}
@@ -115,39 +157,39 @@ export const Integrations: React.FC = () => {
           </div>
         )}
 
-        {activeSubTab === 'zapi' && (
+        {activeSubTab === 'webhook' && (
           <div>
-            <h3>Integração Z-API</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Conecte sua instância Z-API para automação via Webhooks.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+            <h3>Webhook Customizado</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Envie os eventos do seu agente para qualquer URL externa ou serviço de integração.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '30px' }}>
                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                 <label style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>Instance ID *</label>
+                 <label style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>Webhook URL *</label>
                  <input 
                   className="glass" 
-                  value={zapiConfig.instanceId}
-                  onChange={(e) => setZapiConfig({...zapiConfig, instanceId: e.target.value})}
-                  placeholder="ID da sua Instância" 
+                  value={webhookConfig.url}
+                  onChange={(e) => setWebhookConfig({...webhookConfig, url: e.target.value})}
+                  placeholder="https://sua-api.com/webhook" 
                   style={{ padding: '12px', background: 'transparent', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '8px' }} 
                  />
                </div>
                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                 <label style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>Instance Token *</label>
+                 <label style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>Chave Secreta (Opcional)</label>
                  <input 
                   type="password" 
                   className="glass" 
-                  value={zapiConfig.token}
-                  onChange={(e) => setZapiConfig({...zapiConfig, token: e.target.value})}
-                  placeholder="Token da Instância" 
+                  value={webhookConfig.secret}
+                  onChange={(e) => setWebhookConfig({...webhookConfig, secret: e.target.value})}
+                  placeholder="Token de Verificação" 
                   style={{ padding: '12px', background: 'transparent', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '8px' }} 
                  />
                </div>
             </div>
             <button 
-              onClick={handleSaveZapi}
+              onClick={handleSaveWebhook}
               disabled={loading}
               style={{ background: 'var(--accent-cyan)', color: 'black', padding: '12px 24px', borderRadius: '8px', fontWeight: 'bold' }}
             >
-              {loading ? 'Salvando...' : 'Salvar Configurações Z-API'}
+              {loading ? 'Configurando...' : 'Ativar Webhook'}
             </button>
           </div>
         )}

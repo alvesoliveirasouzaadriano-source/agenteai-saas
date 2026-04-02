@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.101.1",
     "animejs": "^3.2.2",
     "framer-motion": "^11.5.4",
     "lucide-react": "^0.441.0",
@@ -19,8 +20,8 @@
     "@types/animejs": "^3.1.12",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react-swc": "^3.5.0",
     "typescript": "^5.5.3",
-    "vite": "^5.4.1",
-    "@vitejs/plugin-react-swc": "^3.5.0"
+    "vite": "^5.4.1"
   }
 }
