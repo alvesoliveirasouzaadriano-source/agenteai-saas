@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { QrCode, ShieldCheck, Globe, Webhook, RefreshCw } from 'lucide-react';
+import { QrCode, ShieldCheck, Globe, Zap, RefreshCw } from 'lucide-react';
 import { apiService } from '../../services/api';
 
 export const Integrations: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<'uazapi' | 'meta' | 'webhook' | 'web'>('uazapi');
+  const [activeSubTab, setActiveSubTab] = useState<'uazapi' | 'meta' | 'evolution' | 'web'>('uazapi');
   const [loading, setLoading] = useState(false);
   const [qrCodeUrl, setQrCodeUrl] = useState<string | null>(null);
   
   const [metaConfig, setMetaConfig] = useState({ phoneId: '', token: '' });
-  const [webhookConfig, setWebhookConfig] = useState({ url: '', secret: '' });
+  const [evolutionConfig, setEvolutionConfig] = useState({ apiUrl: '', apiKey: '', instanceName: '' });
 
   const handleFetchQr = async () => {
     setLoading(true);
@@ -17,10 +17,10 @@ export const Integrations: React.FC = () => {
       if (data.qrCode) {
         setQrCodeUrl(data.qrCode);
       } else {
-        alert('QR Code em processamento. Tente novamente em alguns segundos.');
+        alert('QR Code em processamento. Verifique se as URLs do n8n estão configuradas no seu painel da Cloudflare (VITE_N8N_WEBHOOK_CONFIG).');
       }
     } catch (error) {
-      alert('Erro ao buscar QR Code. Verifique sua conexão.');
+      alert('Erro ao buscar QR Code. Verifique se as Environment Variables (VITE_N8N_WEBHOOK_CONFIG) foram cadastradas na Cloudflare.');
     } finally {
       setLoading(false);
     }
@@ -34,18 +34,18 @@ export const Integrations: React.FC = () => {
     }, 1500);
   };
 
-  const handleSaveWebhook = () => {
+  const handleSaveEvolution = () => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      alert('Webhook configurado com sucesso!');
+      alert('Instância Evolution API configurada com sucesso!');
     }, 1500);
   };
 
   const integrations = [
     { id: 'uazapi', label: 'UAZAPI (WhatsApp)', icon: QrCode, recommended: true },
     { id: 'meta', label: 'Meta API (Oficial)', icon: ShieldCheck },
-    { id: 'webhook', label: 'Webhook Genérico', icon: Webhook },
+    { id: 'evolution', label: 'Evolution API', icon: Zap },
     { id: 'web', label: 'Chat Web', icon: Globe },
   ];
 
@@ -157,39 +157,49 @@ export const Integrations: React.FC = () => {
           </div>
         )}
 
-        {activeSubTab === 'webhook' && (
+        {activeSubTab === 'evolution' && (
           <div>
-            <h3>Webhook Customizado</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Envie os eventos do seu agente para qualquer URL externa ou serviço de integração.</p>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '30px' }}>
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                 <label style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>Webhook URL *</label>
+            <h3>Configuração Evolution API</h3>
+            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px' }}>Conecte seu agente a uma instância dedicada da Evolution API para máxima performance.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', gridColumn: 'span 2' }}>
+                 <label style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>API URL (Endpoint) *</label>
                  <input 
                   className="glass" 
-                  value={webhookConfig.url}
-                  onChange={(e) => setWebhookConfig({...webhookConfig, url: e.target.value})}
-                  placeholder="https://sua-api.com/webhook" 
+                  value={evolutionConfig.apiUrl}
+                  onChange={(e) => setEvolutionConfig({...evolutionConfig, apiUrl: e.target.value})}
+                  placeholder="https://api.suaevolution.com" 
                   style={{ padding: '12px', background: 'transparent', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '8px' }} 
                  />
                </div>
                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                 <label style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>Chave Secreta (Opcional)</label>
+                 <label style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>Global API Key *</label>
                  <input 
                   type="password" 
                   className="glass" 
-                  value={webhookConfig.secret}
-                  onChange={(e) => setWebhookConfig({...webhookConfig, secret: e.target.value})}
-                  placeholder="Token de Verificação" 
+                  value={evolutionConfig.apiKey}
+                  onChange={(e) => setEvolutionConfig({...evolutionConfig, apiKey: e.target.value})}
+                  placeholder="Sua Chave API" 
+                  style={{ padding: '12px', background: 'transparent', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '8px' }} 
+                 />
+               </div>
+               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                 <label style={{ fontSize: '14px', color: 'var(--text-tertiary)' }}>Nome da Instância *</label>
+                 <input 
+                  className="glass" 
+                  value={evolutionConfig.instanceName}
+                  onChange={(e) => setEvolutionConfig({...evolutionConfig, instanceName: e.target.value})}
+                  placeholder="Ex: Agente-Vendas" 
                   style={{ padding: '12px', background: 'transparent', color: 'white', border: '1px solid var(--glass-border)', borderRadius: '8px' }} 
                  />
                </div>
             </div>
             <button 
-              onClick={handleSaveWebhook}
+              onClick={handleSaveEvolution}
               disabled={loading}
               style={{ background: 'var(--accent-cyan)', color: 'black', padding: '12px 24px', borderRadius: '8px', fontWeight: 'bold' }}
             >
-              {loading ? 'Configurando...' : 'Ativar Webhook'}
+              {loading ? 'Validando...' : 'Salvar Instância Evolution'}
             </button>
           </div>
         )}
